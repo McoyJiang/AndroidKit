@@ -16,14 +16,14 @@ import static android.media.MediaRecorder.AudioSource.MIC;
  * current function added by time
  * record an audio of .wav format 30/11/2017
  */
-public class EFRecorder {
-    private static final String TAG = "EFRecorder";
+public class WavRecorder {
+    private static final String TAG = "WavRecorder";
 
     /**
      * INITIALIZING : recorder is initializing;
      * READY : recorder has been initialized, recorder not yet started
      * RECORDING : recording
-     * ERROR : reconstruction needed
+     * ERROR : reconstruction of
      * STOPPED: reset needed
      */
     public enum State {
@@ -92,7 +92,7 @@ public class EFRecorder {
         public void onPeriodicNotification(AudioRecord recorder) {
             LogUtils.e(TAG, "onPeriodicNotification: ");
             if (State.STOPPED == state) {
-                LogUtils.d(EFRecorder.this.getClass().getName(), "recorder stopped");
+                LogUtils.d(WavRecorder.this.getClass().getName(), "recorder stopped");
                 return;
             }
 
@@ -145,14 +145,14 @@ public class EFRecorder {
     };
 
     /**
-     * use default param to instantiate an EFRecorder
+     * use default param to instantiate an WavRecorder
      */
-    public EFRecorder() {
+    public WavRecorder() {
         this(MIC, 44100, CHANNEL_IN_MONO, ENCODING_PCM_16BIT, 3);
     }
 
     /**
-     * constructor an EFRecorder with specified params
+     * constructor an WavRecorder with specified params
      *
      * @param audioSource   the source of audio
      *                      AudioSource.MIC
@@ -169,7 +169,7 @@ public class EFRecorder {
      *
      * @param duration      the automatic duration of audio recording, default is 3 seconds
      */
-    public EFRecorder(int audioSource, int sampleRate, int channelConfig,
+    public WavRecorder(int audioSource, int sampleRate, int channelConfig,
                       int audioFormat, int duration) {
         try {
             // RECORDING_UNCOMPRESSED
@@ -372,7 +372,7 @@ public class EFRecorder {
      * Also finalizes the wave file in case of uncompressed recording.
      */
     public void stop() {
-        LogUtils.e(TAG, "EFRecorder stop: ");
+        LogUtils.e(TAG, "WavRecorder stop: ");
         if (state == State.RECORDING) {
             aRecorder.stop();
 
