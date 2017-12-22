@@ -1,7 +1,6 @@
-package com.example.extdannyjiang.recordsample.audio;
+package com.ef.smallstar.util;
 
 import android.media.AudioRecord;
-import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,8 +16,8 @@ import static android.media.MediaRecorder.AudioSource.MIC;
  * current function added by time
  * record an audio of .wav format 30/11/2017
  */
-public class EasyRecorder {
-    private static final String TAG = "EasyRecorder";
+public class EFRecorder {
+    private static final String TAG = "EFRecorder";
 
     /**
      * INITIALIZING : recorder is initializing;
@@ -91,13 +90,13 @@ public class EasyRecorder {
      */
     private AudioRecord.OnRecordPositionUpdateListener updateListener = new AudioRecord.OnRecordPositionUpdateListener() {
         public void onPeriodicNotification(AudioRecord recorder) {
-            Log.e(TAG, "onPeriodicNotification: ");
+            LogUtils.e(TAG, "onPeriodicNotification: ");
             if (State.STOPPED == state) {
-                Log.d(EasyRecorder.this.getClass().getName(), "recorder stopped");
+                LogUtils.d(EFRecorder.this.getClass().getName(), "recorder stopped");
                 return;
             }
 
-            Log.e(TAG, "onPeriodicNotification: buffer is " + buffer.length);
+            LogUtils.e(TAG, "onPeriodicNotification: buffer is " + buffer.length);
 
             int bufferReadResult = aRecorder.read(buffer, 0, buffer.length);// Fill buffer
 
@@ -121,9 +120,9 @@ public class EasyRecorder {
                         boolean shouldWrite = shouldStartWrite ? shouldStartWrite : (getMaxAmplitude() > 30);
 
                         if (!shouldWrite) {
-                            Log.e(TAG, "decibel is low, don't need to record");
+                            LogUtils.e(TAG, "decibel is low, don't need to record");
                         } else {
-                            Log.e(TAG, "decibel is high enough, need to record");
+                            LogUtils.e(TAG, "decibel is high enough, need to record");
                         }
 
                         if (shouldWrite) {
@@ -134,7 +133,7 @@ public class EasyRecorder {
                         }
 
                     } catch (IOException e) {
-                        Log.e(TAG, "Error occured in updateListener, recording is aborted : " + e.getMessage());
+                        LogUtils.e(TAG, "Error occured in updateListener, recording is aborted : " + e.getMessage());
                         stop();
                     }
             }
@@ -146,14 +145,14 @@ public class EasyRecorder {
     };
 
     /**
-     * use default param to instantiate an EasyRecorder
+     * use default param to instantiate an EFRecorder
      */
-    public EasyRecorder() {
+    public EFRecorder() {
         this(MIC, 44100, CHANNEL_IN_MONO, ENCODING_PCM_16BIT, 3);
     }
 
     /**
-     * constructor an EasyRecorder with specified params
+     * constructor an EFRecorder with specified params
      *
      * @param audioSource   the source of audio
      *                      AudioSource.MIC
@@ -170,8 +169,8 @@ public class EasyRecorder {
      *
      * @param duration      the automatic duration of audio recording, default is 3 seconds
      */
-    public EasyRecorder(int audioSource, int sampleRate, int channelConfig,
-                        int audioFormat, int duration) {
+    public EFRecorder(int audioSource, int sampleRate, int channelConfig,
+                      int audioFormat, int duration) {
         try {
             // RECORDING_UNCOMPRESSED
             if (audioFormat == ENCODING_PCM_16BIT) {
@@ -196,7 +195,7 @@ public class EasyRecorder {
                 bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
                 // Set frame period and timer interval accordingly
                 framePeriod = bufferSize / (2 * bSamples * nChannels / 8);
-                Log.w(TAG, "Increasing buffer size to " + Integer.toString(bufferSize));
+                LogUtils.w(TAG, "Increasing buffer size to " + Integer.toString(bufferSize));
             }
 
             aRecorder = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, bufferSize);
@@ -214,9 +213,9 @@ public class EasyRecorder {
             state = State.INITIALIZING;
         } catch (Exception e) {
             if (e.getMessage() != null) {
-                Log.e(TAG, e.getMessage());
+                LogUtils.e(TAG, e.getMessage());
             } else {
-                Log.e(TAG, "Unknown error occured while initializing recording");
+                LogUtils.e(TAG, "Unknown error occured while initializing recording");
             }
             state = State.ERROR;
         }
@@ -234,9 +233,9 @@ public class EasyRecorder {
             }
         } catch (Exception e) {
             if (e.getMessage() != null) {
-                Log.e(TAG, e.getMessage());
+                LogUtils.e(TAG, e.getMessage());
             } else {
-                Log.e(TAG, "Unknown error occured while setting output path");
+                LogUtils.e(TAG, "Unknown error occured while setting output path");
             }
             state = State.ERROR;
         }
@@ -290,19 +289,19 @@ public class EasyRecorder {
                     buffer = new byte[framePeriod * bSamples / 8 * nChannels];
                     state = State.READY;
                 } else {
-                    Log.e(TAG, "prepare() method called on uninitialized recorder");
+                    LogUtils.e(TAG, "prepare() method called on uninitialized recorder");
                     state = State.ERROR;
                 }
             } else {
-                Log.e(TAG, "prepare() method called on illegal state");
+                LogUtils.e(TAG, "prepare() method called on illegal state");
                 release();
                 state = State.ERROR;
             }
         } catch (Exception e) {
             if (e.getMessage() != null) {
-                Log.e(TAG, e.getMessage());
+                LogUtils.e(TAG, e.getMessage());
             } else {
-                Log.e(TAG, "Unknown error occured in prepare()");
+                LogUtils.e(TAG, "Unknown error occured in prepare()");
             }
             state = State.ERROR;
         }
@@ -319,7 +318,7 @@ public class EasyRecorder {
                 try {
                     fWriter.close(); // Remove prepared file
                 } catch (IOException e) {
-                    Log.e(TAG, "I/O exception occured while closing output file");
+                    LogUtils.e(TAG, "I/O exception occured while closing output file");
                 }
                 (new File(outPath)).delete();
             }
@@ -345,7 +344,7 @@ public class EasyRecorder {
                 state = State.INITIALIZING;
             }
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
+            LogUtils.e(TAG, e.getMessage());
             state = State.ERROR;
         }
     }
@@ -362,7 +361,7 @@ public class EasyRecorder {
 
             state = State.RECORDING;
         } else {
-            Log.e(TAG, "start() called on illegal state");
+            LogUtils.e(TAG, "start() called on illegal state");
             state = State.ERROR;
         }
     }
@@ -373,7 +372,7 @@ public class EasyRecorder {
      * Also finalizes the wave file in case of uncompressed recording.
      */
     public void stop() {
-        Log.e(TAG, "EasyRecorder stop: ");
+        LogUtils.e(TAG, "EFRecorder stop: ");
         if (state == State.RECORDING) {
             aRecorder.stop();
 
@@ -386,7 +385,7 @@ public class EasyRecorder {
 
                 fWriter.close();
             } catch (IOException e) {
-                Log.e(TAG, "I/O exception occured while closing output file");
+                LogUtils.e(TAG, "I/O exception occured while closing output file");
                 state = State.ERROR;
             }
 
@@ -396,7 +395,7 @@ public class EasyRecorder {
 
             state = State.STOPPED;
         } else {
-            Log.e(TAG, "stop() called on illegal state");
+            LogUtils.e(TAG, "stop() called on illegal state");
             state = State.ERROR;
         }
     }
