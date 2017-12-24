@@ -1,6 +1,7 @@
 package com.ef.smallstar.util;
 
 import android.media.AudioRecord;
+import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -90,13 +91,13 @@ public class WavRecorder {
      */
     private AudioRecord.OnRecordPositionUpdateListener updateListener = new AudioRecord.OnRecordPositionUpdateListener() {
         public void onPeriodicNotification(AudioRecord recorder) {
-            LogUtils.e(TAG, "onPeriodicNotification: ");
+            Log.e(TAG, "onPeriodicNotification: ");
             if (State.STOPPED == state) {
-                LogUtils.d(WavRecorder.this.getClass().getName(), "recorder stopped");
+                Log.d(WavRecorder.this.getClass().getName(), "recorder stopped");
                 return;
             }
 
-            LogUtils.e(TAG, "onPeriodicNotification: buffer is " + buffer.length);
+            Log.e(TAG, "onPeriodicNotification: buffer is " + buffer.length);
 
             int bufferReadResult = aRecorder.read(buffer, 0, buffer.length);// Fill buffer
 
@@ -120,9 +121,9 @@ public class WavRecorder {
                         boolean shouldWrite = shouldStartWrite ? shouldStartWrite : (getMaxAmplitude() > 30);
 
                         if (!shouldWrite) {
-                            LogUtils.e(TAG, "decibel is low, don't need to record");
+                            Log.e(TAG, "decibel is low, don't need to record");
                         } else {
-                            LogUtils.e(TAG, "decibel is high enough, need to record");
+                            Log.e(TAG, "decibel is high enough, need to record");
                         }
 
                         if (shouldWrite) {
@@ -133,7 +134,7 @@ public class WavRecorder {
                         }
 
                     } catch (IOException e) {
-                        LogUtils.e(TAG, "Error occured in updateListener, recording is aborted : " + e.getMessage());
+                        Log.e(TAG, "Error occured in updateListener, recording is aborted : " + e.getMessage());
                         stop();
                     }
             }
@@ -195,7 +196,7 @@ public class WavRecorder {
                 bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
                 // Set frame period and timer interval accordingly
                 framePeriod = bufferSize / (2 * bSamples * nChannels / 8);
-                LogUtils.w(TAG, "Increasing buffer size to " + Integer.toString(bufferSize));
+                Log.w(TAG, "Increasing buffer size to " + Integer.toString(bufferSize));
             }
 
             aRecorder = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, bufferSize);
@@ -213,9 +214,9 @@ public class WavRecorder {
             state = State.INITIALIZING;
         } catch (Exception e) {
             if (e.getMessage() != null) {
-                LogUtils.e(TAG, e.getMessage());
+                Log.e(TAG, e.getMessage());
             } else {
-                LogUtils.e(TAG, "Unknown error occured while initializing recording");
+                Log.e(TAG, "Unknown error occured while initializing recording");
             }
             state = State.ERROR;
         }
@@ -233,9 +234,9 @@ public class WavRecorder {
             }
         } catch (Exception e) {
             if (e.getMessage() != null) {
-                LogUtils.e(TAG, e.getMessage());
+                Log.e(TAG, e.getMessage());
             } else {
-                LogUtils.e(TAG, "Unknown error occured while setting output path");
+                Log.e(TAG, "Unknown error occured while setting output path");
             }
             state = State.ERROR;
         }
@@ -289,19 +290,19 @@ public class WavRecorder {
                     buffer = new byte[framePeriod * bSamples / 8 * nChannels];
                     state = State.READY;
                 } else {
-                    LogUtils.e(TAG, "prepare() method called on uninitialized recorder");
+                    Log.e(TAG, "prepare() method called on uninitialized recorder");
                     state = State.ERROR;
                 }
             } else {
-                LogUtils.e(TAG, "prepare() method called on illegal state");
+                Log.e(TAG, "prepare() method called on illegal state");
                 release();
                 state = State.ERROR;
             }
         } catch (Exception e) {
             if (e.getMessage() != null) {
-                LogUtils.e(TAG, e.getMessage());
+                Log.e(TAG, e.getMessage());
             } else {
-                LogUtils.e(TAG, "Unknown error occured in prepare()");
+                Log.e(TAG, "Unknown error occured in prepare()");
             }
             state = State.ERROR;
         }
@@ -318,7 +319,7 @@ public class WavRecorder {
                 try {
                     fWriter.close(); // Remove prepared file
                 } catch (IOException e) {
-                    LogUtils.e(TAG, "I/O exception occured while closing output file");
+                    Log.e(TAG, "I/O exception occured while closing output file");
                 }
                 (new File(outPath)).delete();
             }
@@ -344,7 +345,7 @@ public class WavRecorder {
                 state = State.INITIALIZING;
             }
         } catch (Exception e) {
-            LogUtils.e(TAG, e.getMessage());
+            Log.e(TAG, e.getMessage());
             state = State.ERROR;
         }
     }
@@ -361,7 +362,7 @@ public class WavRecorder {
 
             state = State.RECORDING;
         } else {
-            LogUtils.e(TAG, "start() called on illegal state");
+            Log.e(TAG, "start() called on illegal state");
             state = State.ERROR;
         }
     }
@@ -372,7 +373,7 @@ public class WavRecorder {
      * Also finalizes the wave file in case of uncompressed recording.
      */
     public void stop() {
-        LogUtils.e(TAG, "WavRecorder stop: ");
+        Log.e(TAG, "WavRecorder stop: ");
         if (state == State.RECORDING) {
             aRecorder.stop();
 
@@ -385,7 +386,7 @@ public class WavRecorder {
 
                 fWriter.close();
             } catch (IOException e) {
-                LogUtils.e(TAG, "I/O exception occured while closing output file");
+                Log.e(TAG, "I/O exception occured while closing output file");
                 state = State.ERROR;
             }
 
@@ -395,7 +396,7 @@ public class WavRecorder {
 
             state = State.STOPPED;
         } else {
-            LogUtils.e(TAG, "stop() called on illegal state");
+            Log.e(TAG, "stop() called on illegal state");
             state = State.ERROR;
         }
     }
