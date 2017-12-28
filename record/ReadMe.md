@@ -29,4 +29,4 @@ wavRecorder.prepare();
 wavRecorder.start();
 ```
 
-<font color='#ff0000'>Notice：before start WavRecorder, we should have granted all the permissions that this function need</font>
+## *Notice：before start WavRecorder, we should have granted all the permissions that this function need*
