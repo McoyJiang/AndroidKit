@@ -31,9 +31,6 @@ public class WavRecorder {
 
     ;
 
-    public static final boolean RECORDING_UNCOMPRESSED = true;
-    public static final boolean RECORDING_COMPRESSED = false;
-
     // The interval in which the recorded samples are output to the file
     // Used only in uncompressed mode
     private static final int TIMER_INTERVAL = 120;
@@ -171,7 +168,6 @@ public class WavRecorder {
     public WavRecorder(int audioSource, int sampleRate, int channelConfig,
                       int audioFormat, int duration) {
         try {
-            // RECORDING_UNCOMPRESSED
             if (audioFormat == ENCODING_PCM_16BIT) {
                 bSamples = 16;
             } else {
