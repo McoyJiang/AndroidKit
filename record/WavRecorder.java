@@ -4,6 +4,7 @@ import android.util.Log;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.LinkedList;
 
 import static android.media.AudioFormat.CHANNEL_IN_MONO;
 import static android.media.AudioFormat.ENCODING_PCM_16BIT;
@@ -56,14 +57,17 @@ public class WavRecorder {
     private int bufferSize;
     private int aSource;
     private int aFormat;
-    private boolean shouldStartWrite = false;
-    private boolean isFirstRecord = true;
+
+    private boolean beginRecord = false;
+    private boolean aNeedToDeformed = false;
 
     // Number of frames written to file on each output(only in uncompressed mode)
     private int framePeriod;
 
     // Buffer for output(only in uncompressed mode)
     private byte[] buffer;
+
+    private LinkedList<byte[]> bufferCache = new LinkedList<>();
 
     // Number of bytes written to file after header(only in uncompressed mode)
     // after stop() is called, this size is written to the header/data chunk in the wave file
@@ -97,41 +101,68 @@ public class WavRecorder {
             int bufferReadResult = aRecorder.read(buffer, 0, buffer.length);// Fill buffer
 
             if(AudioRecord.ERROR_INVALID_OPERATION != bufferReadResult){
-                    try {
-                        if (bSamples == 16) {
-                            for (int i = 0; i < buffer.length / 2; i++) { // 16bit sample size
-                                short curSample = getShort(buffer[i * 2], buffer[i * 2 + 1]);
-                                if (curSample > cAmplitude) { // Check amplitude
-                                    cAmplitude = curSample;
-                                }
-                            }
-                        } else { // 8bit sample size
-                            for (int i = 0; i < buffer.length; i++) {
-                                if (buffer[i] > cAmplitude) { // Check amplitude
-                                    cAmplitude = buffer[i];
-                                }
+                try {
+                    if (bSamples == 16) {
+                        for (int i = 0; i < buffer.length / 2; i++) { // 16bit sample size
+                            short curSample = getShort(buffer[i * 2], buffer[i * 2 + 1]);
+                            if (curSample > cAmplitude) { // Check amplitude
+                                cAmplitude = curSample;
                             }
                         }
+                    } else { // 8bit sample size
+                        for (int i = 0; i < buffer.length; i++) {
+                            if (buffer[i] > cAmplitude) { // Check amplitude
+                                cAmplitude = buffer[i];
+                            }
+                        }
+                    }
 
-                        boolean shouldWrite = shouldStartWrite ? shouldStartWrite : (getMaxAmplitude() > 30);
-
-                        if (!shouldWrite) {
-                            Log.e(TAG, "decibel is low, don't need to record");
-                        } else {
+                    /**
+                     * there are two branches here:
+                     * 1 aNeedToDeformed
+                     *      need to judge if the amplitude is less than 30 an the beginning & end of recording
+                     * 2 !aNeedToDeformed
+                     *      just write all the bytes into the file
+                     */
+                    if (!aNeedToDeformed) {
+                        fWriter.write(buffer); // Write buffer to file
+                        payloadSize += buffer.length;
+                    } else {
+                        if (!beginRecord && getMaxAmplitude() > 3000) {
                             Log.e(TAG, "decibel is high enough, need to record");
+                            // should make beginRecord = true here
+                            beginRecord = true;
+                        } else if (!beginRecord){
+                            Log.e(TAG, "decibel is low, don't need to record");
                         }
 
-                        if (shouldWrite) {
-                            fWriter.write(buffer); // Write buffer to file
-                            payloadSize += buffer.length;
+                        if (beginRecord) {
+                            Log.i(TAG, "record has been started ！！！");
+
+                            if (getMaxAmplitude() < 3000) {
+                                Log.i(TAG, "record has been started, but decibel < 30 now");
+
+                                bufferCache.add(buffer);
+                            } else {
+                                Log.i(TAG, "record has been started, and decibel > 30, recording");
+
+                                byte[] poll;
+                                while ((poll = bufferCache.poll()) != null) {
+                                    fWriter.write(poll);
+                                    payloadSize += poll.length;
+                                }
+
+                                fWriter.write(buffer);
+                                payloadSize += buffer.length;
+                            }
                         } else {
                             // Don't save anything
                         }
-
-                    } catch (IOException e) {
-                        Log.e(TAG, "Error occured in updateListener, recording is aborted : " + e.getMessage());
-                        stop();
                     }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error occured in updateListener, recording is aborted : " + e.getMessage());
+                    stop();
+                }
             }
         }
 
@@ -144,7 +175,7 @@ public class WavRecorder {
      * use default param to instantiate an WavRecorder
      */
     public WavRecorder() {
-        this(MIC, 44100, CHANNEL_IN_MONO, ENCODING_PCM_16BIT, 3);
+        this(MIC, 44100, CHANNEL_IN_MONO, ENCODING_PCM_16BIT, true);
     }
 
     /**
@@ -163,10 +194,12 @@ public class WavRecorder {
      *                      AudioFormat.ENCODING_PCM_16BIT
      *                      AudioFormat.ENCODING_PCM_8BIT
      *
-     * @param duration      the automatic duration of audio recording, default is 3 seconds
+     * @param needToDeformed if need to deform the recorded audio,
+     *                       by cut the beginning & end where amplitude is
+     *                       less than 30 decibels
      */
     public WavRecorder(int audioSource, int sampleRate, int channelConfig,
-                      int audioFormat, int duration) {
+                       int audioFormat, boolean needToDeformed) {
         try {
             if (audioFormat == ENCODING_PCM_16BIT) {
                 bSamples = 16;
@@ -183,6 +216,7 @@ public class WavRecorder {
             aSource = audioSource;
             sRate = sampleRate;
             aFormat = audioFormat;
+            aNeedToDeformed = needToDeformed;
 
             framePeriod = sampleRate * TIMER_INTERVAL / 1000;
             bufferSize = framePeriod * 2 * bSamples * nChannels / 8;
@@ -201,9 +235,6 @@ public class WavRecorder {
 
             cAmplitude = 0;
             outPath = null;
-
-            if (duration > 0) {
-            }
 
             state = State.INITIALIZING;
         } catch (Exception e) {
