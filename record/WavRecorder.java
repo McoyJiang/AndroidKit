@@ -1,5 +1,3 @@
-package com.ef.smallstar.util;
-
 import android.media.AudioRecord;
 import android.util.Log;
 
