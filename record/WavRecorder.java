@@ -128,7 +128,7 @@ public class WavRecorder {
                         fWriter.write(buffer); // Write buffer to file
                         payloadSize += buffer.length;
                     } else {
-                        if (!beginRecord && getMaxAmplitude() > 3000) {
+                        if (!beginRecord && getMaxAmplitude() > 30) {
                             Log.e(TAG, "decibel is high enough, need to record");
                             // should make beginRecord = true here
                             beginRecord = true;
@@ -139,7 +139,7 @@ public class WavRecorder {
                         if (beginRecord) {
                             Log.i(TAG, "record has been started ！！！");
 
-                            if (getMaxAmplitude() < 3000) {
+                            if (getMaxAmplitude() < 30) {
                                 Log.i(TAG, "record has been started, but decibel < 30 now");
 
                                 bufferCache.add(buffer);
@@ -274,7 +274,7 @@ public class WavRecorder {
      */
     public int getMaxAmplitude() {
         if (state == State.RECORDING) {
-            int result = cAmplitude;
+            int result = (int) (10 * Math.log10(cAmplitude));
             cAmplitude = 0;
             return result;
         } else {
